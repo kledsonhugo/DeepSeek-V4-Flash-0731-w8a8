@@ -1,0 +1,101 @@
+apiversion: modelslim_v1
+spec:
+  process:
+  - type: quarot
+    block_size: 32
+  - type: flex_smooth_quant
+    enable_subgraph_type:
+    - norm-linear
+    - linear-linear
+    include:
+    - '*'
+  - type: linear_quant
+    qconfig:
+      act:
+        scope: per_token
+        dtype: int8
+        symmetric: true
+        method: minmax
+      weight:
+        scope: per_channel
+        dtype: int8
+        symmetric: true
+        method: minmax
+    include:
+    - '*attn*'
+    exclude:
+    - '*wo_a'
+    - '*wkv'
+    - '*wq_a'
+    - '*compressor.wgate'
+    - '*compressor.wkv'
+    - '*indexer.weights_proj'
+    - '*indexer.compressor.wgate'
+    - '*indexer.compressor.wkv'
+  - type: linear_quant
+    qconfig:
+      act:
+        scope: per_token
+        dtype: int8
+        symmetric: true
+        method: minmax
+      weight:
+        scope: per_channel
+        dtype: int8
+        symmetric: true
+        method: minmax
+    include:
+    - '*ffn*'
+    exclude:
+    - '*gate'
+  - type: linear_quant
+    qconfig:
+      act:
+        scope: per_token
+        dtype: int8
+        symmetric: true
+        method: minmax
+      weight:
+        scope: per_channel
+        dtype: int8
+        symmetric: true
+        method: minmax
+    include:
+    - mtp.*.attn.wq_a
+    - mtp.*.attn.wq_b
+    - mtp.*.attn.wkv
+    - mtp.*.ffn.shared_experts.w1
+    - mtp.*.ffn.shared_experts.w2
+    - mtp.*.ffn.shared_experts.w3
+    - mtp.*.ffn.experts.*.w1
+    - mtp.*.ffn.experts.*.w2
+    - mtp.*.ffn.experts.*.w3
+  dataset: mix_calib.jsonl
+  save:
+  - type: ascendv1_saver
+    part_file_size: 4
+metadata:
+  config_id: deepseek_v4_flash_dspark_w8a8
+  score: 90.0
+  label:
+    w_bit: 8
+    a_bit: 8
+    is_sparse: false
+    kv_cache: false
+  verified_model_types:
+  - DeepSeek-V4-Flash-DSpark
+  verified_tags:
+    DeepSeek-V4-Flash-DSpark:
+    - - vLLM-Ascend
+      - Atlas_A3_Inference
+default_w8a8_dynamic:
+  act:
+    scope: per_token
+    dtype: int8
+    symmetric: true
+    method: minmax
+  weight:
+    scope: per_channel
+    dtype: int8
+    symmetric: true
+    method: minmax
